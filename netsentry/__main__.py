@@ -50,6 +50,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="flow inactivity timeout (default: 60)",
     )
 
+    analyse.add_argument(
+        "--window",
+        type=positive_float,
+        default=30.0,
+        metavar="SECONDS",
+        help="rolling host window (default: 30)",
+    
+    )
+
     return parser
 
 
@@ -72,10 +81,19 @@ def print_summary(
     print(f"Flows reconstructed:  {result.flows.flows_created:,}")
     print(f"Flows completed:      {result.flows.flows_completed:,}")
 
+    host_count = len(
+        {
+            profile.source_ip
+            for profile in result.host_profiles
+        }
+    )
+    print(f"Hosts profiled:       {host_count:,}")
+
 
 def run_analyse(
     capture: Path,
     flow_timeout: float,
+    window_seconds: float,
     parser: argparse.ArgumentParser,
 ) -> int:
     capture = capture.expanduser()
@@ -87,6 +105,7 @@ def run_analyse(
         result = analyse_capture(
             capture,
             flow_timeout=flow_timeout,
+            window_seconds=window_seconds,
         )
     except PcapReadError as exc:
         parser.error(str(exc))
@@ -103,9 +122,9 @@ def main(arguments: Sequence[str] | None = None) -> int:
         return run_analyse(
             args.capture,
             args.flow_timeout,
+            args.window,
             parser,
         )
-
     parser.error(f"unknown command: {args.command}")
 
 
