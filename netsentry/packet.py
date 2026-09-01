@@ -7,6 +7,9 @@ from scapy.error import Scapy_Exception
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.packet import Packet
 from scapy.utils import PcapReader
+from scapy.config import conf
+from scapy.layers.l2 import Dot1Q
+from contextlib import contextmanager
 
 
 Protocol = Literal["TCP", "UDP"]
@@ -80,12 +83,32 @@ def parse_packet(packet: Packet) -> PacketRecord | None:
     )
 
 
+@contextmanager
+def _filtered_reader(
+    path: Path,
+) -> Iterator[PcapReader]:
+    with PcapReader(str(path)) as reader:
+        conf.layers.filter(
+            [
+                reader.LLcls,
+                Dot1Q,
+                IP,
+                TCP,
+                UDP,
+            ]
+        )
+        try:
+            yield reader
+        finally:
+            conf.layers.unfilter()
+
+
 def iter_packet_records(
     path: Path,
     counters: PacketCounters,
 ) -> Iterator[PacketRecord]:
     try:
-        with PcapReader(str(path)) as reader:
+        with _filtered_reader(path) as reader:
             for packet in reader:
                 counters.encountered += 1
                 record = parse_packet(packet)
@@ -99,5 +122,3 @@ def iter_packet_records(
         raise PcapReadError(
             f"could not read PCAP '{path}': {exc}"
         ) from exc
-
-

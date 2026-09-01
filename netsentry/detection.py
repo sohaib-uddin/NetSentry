@@ -148,7 +148,7 @@ def _detect_isolation_group(
     matrix = _finite_matrix(records)
     model = IsolationForest(
         n_estimators=100,
-        contamination="auto",
+        contamination=0.05,
         random_state=42,
     )
     labels = model.fit_predict(matrix)

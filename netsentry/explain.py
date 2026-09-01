@@ -70,7 +70,10 @@ def _explain_host(
         profile.unique_destination_ips
         / connections
     )
-    syn_ratio = profile.syn_packets / connections
+    syn_ratio = min(
+    profile.syn_packets / connections,
+    1.0,
+    )
 
     if (
         profile.connections >= 10
@@ -129,12 +132,13 @@ def _explain_host(
         )
 
     if (
-        profile.syn_packets >= 5
-        and syn_ratio >= 0.8
+    profile.connections >= 5
+    and profile.syn_packets >= 5
+    and syn_ratio >= 0.8
     ):
         return (
             "SYN-heavy activity",
-            "a high proportion of recent connections contain SYN packets",
+            "recent SYN activity is high relative to connection volume",
             (
                 ("syn_packets", float(profile.syn_packets)),
                 ("connections", float(profile.connections)),

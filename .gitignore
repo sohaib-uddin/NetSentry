@@ -18,3 +18,7 @@ results.json
 benchmark-results/
 
 .pytest-temp/
+
+benchmarks/data/
+
+benchmarks/*.prof
